@@ -31,6 +31,8 @@
     <string name="ascii">ASCII</string>
     <string name="clear">清空</string>
     <string name="quit">退出</string>
+    <string name="sendCon">连续</string>
+    <string name="sendConStop">停止</string>
     
     
 </resources>

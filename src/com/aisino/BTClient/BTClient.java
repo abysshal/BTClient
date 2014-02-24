@@ -55,6 +55,7 @@ public class BTClient extends Activity implements SmartKeyInterf {
 	boolean bThread = false;
 
 	boolean bHex = true;
+	boolean isSendCon = false;
 
 	private BluetoothAdapter _bluetooth = BluetoothAdapter.getDefaultAdapter();
 
@@ -86,46 +87,17 @@ public class BTClient extends Activity implements SmartKeyInterf {
 	}
 
 	public void onSendButtonClicked(View v) {
-		if (bHex == true) {
-			try {
-				OutputStream os = _socket.getOutputStream();
-				byte[] toWrite = hexStr2Bytes(edit0.getText().toString());
-				if (toWrite != null) {
-					os.write(toWrite);
-				} else {
-					Toast.makeText(getApplicationContext(), "Hex2Bytes Error.",
-							Toast.LENGTH_SHORT).show();
-				}
-			} catch (IOException e) {
-			}
-		} else {
-			int i = 0;
-			int n = 0;
-			try {
-				OutputStream os = _socket.getOutputStream();
-				byte[] bos = edit0.getText().toString().getBytes();
-				for (i = 0; i < bos.length; i++) {
-					if (bos[i] == 0x0a)
-						n++;
-				}
-				byte[] bos_new = new byte[bos.length + n];
-				n = 0;
-				for (i = 0; i < bos.length; i++) { // br is 0a in phone, changed
-													// to
-													// 0d 0a before sending
-					if (bos[i] == 0x0a) {
-						bos_new[n] = 0x0d;
-						n++;
-						bos_new[n] = 0x0a;
-					} else {
-						bos_new[n] = bos[i];
-					}
-					n++;
-				}
+		this.sendMsg();
+	}
 
-				os.write(bos_new);
-			} catch (IOException e) {
-			}
+	public void onSendConButtonClicked(View v) {
+		Button button = (Button) findViewById(R.id.btn_sendCon);
+		isSendCon = !isSendCon;
+		if (isSendCon) {
+			button.setText(getString(R.string.sendConStop));
+			this.sendMsg();
+		} else {
+			button.setText(getString(R.string.sendCon));
 		}
 	}
 
@@ -188,6 +160,50 @@ public class BTClient extends Activity implements SmartKeyInterf {
 			break;
 		}
 	}
+	
+	private void sendMsg() {
+		if (bHex == true) {
+			try {
+				OutputStream os = _socket.getOutputStream();
+				byte[] toWrite = hexStr2Bytes(edit0.getText().toString());
+				if (toWrite != null) {
+					os.write(toWrite);
+				} else {
+					Toast.makeText(getApplicationContext(), "Hex2Bytes Error.",
+							Toast.LENGTH_SHORT).show();
+				}
+			} catch (IOException e) {
+			}
+		} else {
+			int i = 0;
+			int n = 0;
+			try {
+				OutputStream os = _socket.getOutputStream();
+				byte[] bos = edit0.getText().toString().getBytes();
+				for (i = 0; i < bos.length; i++) {
+					if (bos[i] == 0x0a)
+						n++;
+				}
+				byte[] bos_new = new byte[bos.length + n];
+				n = 0;
+				for (i = 0; i < bos.length; i++) { // br is 0a in phone, changed
+													// to
+													// 0d 0a before sending
+					if (bos[i] == 0x0a) {
+						bos_new[n] = 0x0d;
+						n++;
+						bos_new[n] = 0x0a;
+					} else {
+						bos_new[n] = bos[i];
+					}
+					n++;
+				}
+
+				os.write(bos_new);
+			} catch (IOException e) {
+			}
+		}
+	}
 
 	Thread ReadThread = new Thread() {
 
@@ -210,8 +226,8 @@ public class BTClient extends Activity implements SmartKeyInterf {
 						if (bHex == true) {
 							String s0 = byte2HexStr(buffer, 0, num);
 							if (s0 == null) {
-//								Toast.makeText(getApplicationContext(), "",
-//										Toast.LENGTH_SHORT);
+								// Toast.makeText(getApplicationContext(), "",
+								// Toast.LENGTH_SHORT);
 							} else {
 								fmsg += s0;
 								smsg += s0;
@@ -253,6 +269,9 @@ public class BTClient extends Activity implements SmartKeyInterf {
 			super.handleMessage(msg);
 			dis.setText(smsg);
 			sv.scrollTo(0, dis.getMeasuredHeight());
+			if(isSendCon) {
+				sendMsg();
+			}
 		}
 	};
 
