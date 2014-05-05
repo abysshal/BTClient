@@ -41,12 +41,12 @@
 			android:onClick="onSendButtonClicked">
 		</Button>
 		<Button 
-			android:text="@string/sendCon" 
-			android:id="@+id/btn_sendCon" 
-			android:layout_width="wrap_content" 
-			android:layout_height="wrap_content"
-			android:onClick="onSendConButtonClicked">
-		</Button>
+ 			android:text="@string/sendCon" 
+ 			android:id="@+id/btn_sendCon" 
+ 			android:layout_width="wrap_content" 
+ 			android:layout_height="wrap_content"
+ 			android:onClick="onSendConButtonClicked">
+ 		</Button>
     </LinearLayout>
     <LinearLayout
         android:orientation="horizontal"

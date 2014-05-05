@@ -14,7 +14,11 @@ For AisinoChip AC6.
 
 #### Log
 
-2014.1.2: Add validation to ensure the content the user is entering is in an accepted format.
+2014.05.05: Fix sendCon bug.
+
+2014.02.26: Add a SendContinuously button for stability test.
+
+2014.01.02: Add validation to ensure the content the user is entering is in an accepted format.
 
 2013.12.16: Fix Hex mode cause fc bug, byte range reason.
 

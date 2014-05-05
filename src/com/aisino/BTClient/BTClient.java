@@ -21,9 +21,6 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.view.LayoutInflater;
-//import android.view.Menu;            //如使用菜单加入此三包
-//import android.view.MenuInflater;
-//import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -90,16 +87,85 @@ public class BTClient extends Activity implements SmartKeyInterf {
 		this.sendMsg();
 	}
 
+	Thread sendConThread = null;
+	
 	public void onSendConButtonClicked(View v) {
 		Button button = (Button) findViewById(R.id.btn_sendCon);
 		isSendCon = !isSendCon;
 		if (isSendCon) {
 			button.setText(getString(R.string.sendConStop));
-			this.sendMsg();
+			if (this.sendConThread != null && this.sendConThread.isAlive()) {
+				this.sendConThread.interrupt();
+				this.sendConThread = null;
+			}
+
+			this.sendConThread = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					while (isSendCon) {
+						sendMsg();
+						try {
+							Thread.sleep(200);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			});
+			this.sendConThread.start();
 		} else {
 			button.setText(getString(R.string.sendCon));
+			if (this.sendConThread != null && this.sendConThread.isAlive()) {
+				this.sendConThread.interrupt();
+			}
 		}
 	}
+	
+	private void sendMsg() {
+		if (bHex == true) {
+			try {
+				OutputStream os = _socket.getOutputStream();
+				byte[] toWrite = hexStr2Bytes(edit0.getText().toString());
+				if (toWrite != null) {
+					os.write(toWrite);
+				} else {
+					Toast.makeText(getApplicationContext(), "Hex2Bytes Error.",
+							Toast.LENGTH_SHORT).show();
+				}
+			} catch (IOException e) {
+			}
+		} else {
+			int i = 0;
+			int n = 0;
+			try {
+				OutputStream os = _socket.getOutputStream();
+				byte[] bos = edit0.getText().toString().getBytes();
+				for (i = 0; i < bos.length; i++) {
+					if (bos[i] == 0x0a)
+						n++;
+				}
+				byte[] bos_new = new byte[bos.length + n];
+				n = 0;
+				for (i = 0; i < bos.length; i++) { // br is 0a in phone, changed
+													// to
+													// 0d 0a before sending
+					if (bos[i] == 0x0a) {
+						bos_new[n] = 0x0d;
+						n++;
+						bos_new[n] = 0x0a;
+					} else {
+						bos_new[n] = bos[i];
+					}
+					n++;
+				}
+
+				os.write(bos_new);
+			} catch (IOException e) {
+			}
+		}
+	}
+	
 
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
@@ -160,50 +226,6 @@ public class BTClient extends Activity implements SmartKeyInterf {
 			break;
 		}
 	}
-	
-	private void sendMsg() {
-		if (bHex == true) {
-			try {
-				OutputStream os = _socket.getOutputStream();
-				byte[] toWrite = hexStr2Bytes(edit0.getText().toString());
-				if (toWrite != null) {
-					os.write(toWrite);
-				} else {
-					Toast.makeText(getApplicationContext(), "Hex2Bytes Error.",
-							Toast.LENGTH_SHORT).show();
-				}
-			} catch (IOException e) {
-			}
-		} else {
-			int i = 0;
-			int n = 0;
-			try {
-				OutputStream os = _socket.getOutputStream();
-				byte[] bos = edit0.getText().toString().getBytes();
-				for (i = 0; i < bos.length; i++) {
-					if (bos[i] == 0x0a)
-						n++;
-				}
-				byte[] bos_new = new byte[bos.length + n];
-				n = 0;
-				for (i = 0; i < bos.length; i++) { // br is 0a in phone, changed
-													// to
-													// 0d 0a before sending
-					if (bos[i] == 0x0a) {
-						bos_new[n] = 0x0d;
-						n++;
-						bos_new[n] = 0x0a;
-					} else {
-						bos_new[n] = bos[i];
-					}
-					n++;
-				}
-
-				os.write(bos_new);
-			} catch (IOException e) {
-			}
-		}
-	}
 
 	Thread ReadThread = new Thread() {
 
@@ -226,8 +248,8 @@ public class BTClient extends Activity implements SmartKeyInterf {
 						if (bHex == true) {
 							String s0 = byte2HexStr(buffer, 0, num);
 							if (s0 == null) {
-								// Toast.makeText(getApplicationContext(), "",
-								// Toast.LENGTH_SHORT);
+//								Toast.makeText(getApplicationContext(), "",
+//										Toast.LENGTH_SHORT);
 							} else {
 								fmsg += s0;
 								smsg += s0;
@@ -269,9 +291,6 @@ public class BTClient extends Activity implements SmartKeyInterf {
 			super.handleMessage(msg);
 			dis.setText(smsg);
 			sv.scrollTo(0, dis.getMeasuredHeight());
-			if(isSendCon) {
-				sendMsg();
-			}
 		}
 	};
 
@@ -285,23 +304,6 @@ public class BTClient extends Activity implements SmartKeyInterf {
 		// _bluetooth.disable();
 	}
 
-	/*
-	 * @Override public boolean onCreateOptionsMenu(Menu menu) { MenuInflater
-	 * inflater = getMenuInflater(); inflater.inflate(R.menu.option_menu, menu);
-	 * return true; }
-	 */
-
-	/*
-	 * @Override public boolean onOptionsItemSelected(MenuItem item) { switch
-	 * (item.getItemId()) { case R.id.scan: if(_bluetooth.isEnabled()==false){
-	 * Toast.makeText(this, "Open BT......", Toast.LENGTH_LONG).show(); return
-	 * true; } // Launch the DeviceListActivity to see devices and do scan
-	 * Intent serverIntent = new Intent(this, DeviceListActivity.class);
-	 * startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE); return
-	 * true; case R.id.quit: finish(); return true; case R.id.clear: smsg="";
-	 * ls.setText(smsg); return true; case R.id.save: Save(); return true; }
-	 * return false; }
-	 */
 
 	public void onConnectButtonClicked(View v) {
 		if (_bluetooth.isEnabled() == false) {
